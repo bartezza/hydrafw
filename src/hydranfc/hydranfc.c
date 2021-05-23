@@ -31,6 +31,7 @@
 #include "hydrabus_sd.h"
 #include <string.h>
 #include "hydranfc_typeb.h"
+#include "hydranfc_srix.h"
 
 static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos);
 static int show(t_hydra_console *con, t_tokenline_parsed *p);
@@ -84,6 +85,7 @@ static struct {
 enum {
 	NFC_TYPEA,
 	NFC_TYPEB,
+	NFC_SRIX,
 	NFC_VICINITY,
 	NFC_EMUL_UID_14443A
 } nfc_function_t;
@@ -817,6 +819,7 @@ const char *hydranfc_get_mode_string(int mode)
     switch (mode) {
         case NFC_TYPEA: return "MIFARE";
         case NFC_TYPEB: return "TypeB";
+        case NFC_SRIX: return "SRIX4k";
         default: return "Vicinity";
     }
 }
@@ -829,6 +832,8 @@ static void scan(t_hydra_console *con)
 		hydranfc_scan_mifare(con);
 	else if (proto->config.hydranfc.dev_function == NFC_TYPEB)
 	    hydranfc_scan_typeb(con);
+	else if (proto->config.hydranfc.dev_function == NFC_SRIX)
+        hydranfc_srix_scan(con);
 	else if (proto->config.hydranfc.dev_function == NFC_VICINITY)
 		hydranfc_scan_vicinity(con);
 }
@@ -842,6 +847,7 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 	unsigned int mifare_uid = 0;
 	filename_t sd_file;
 	int str_offset;
+	uint32_t arg_uint;
 	bool sniff_trace_uart1;
 	bool sniff_raw;
 	bool sniff_bin;
@@ -882,6 +888,10 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 	        proto->config.hydranfc.dev_function = NFC_TYPEB;
 	        break;
 
+	    case T_SRIX:
+            proto->config.hydranfc.dev_function = NFC_SRIX;
+            break;
+
 	    case T_SENDB: {
 	        const char *str = (const char *)(p->buf + p->tokens[t+3]);
 	        cprintf(con, "Str = '%s'\n", str);
@@ -911,15 +921,24 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 			break;
 
 		case T_SCAN:
+		case T_READ_ALL:
 			action = p->tokens[t];
 			break;
 
 		case T_READ_MF_ULTRALIGHT:
+		case T_DUMP:
+        case T_CLONE:
 			action = p->tokens[t];
 			if (p->tokens[t+1] != T_ARG_STRING || p->tokens[t+3] != 0)
 				return FALSE;
 			memcpy(&str_offset, &p->tokens[t+2], sizeof(int));
 			snprintf(sd_file.filename, FILENAME_SIZE, "0:%s", p->buf + str_offset);
+			break;
+
+		case T_FILL_ALL:
+			action = p->tokens[t];
+			if (p->tokens[t+1] != T_ARG_UINT || p->tokens[t+3] != 0)
+				return FALSE;
 			break;
 
 		case T_EMUL_MF_ULTRALIGHT:
@@ -970,7 +989,7 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 	switch(action) {
 	case T_SCAN:
 		dev_func = proto->config.hydranfc.dev_function;
-		if( (dev_func == NFC_TYPEA) || (dev_func == NFC_TYPEB) || (dev_func == NFC_VICINITY) ) {
+		if( (dev_func == NFC_TYPEA) || (dev_func == NFC_TYPEB) || (dev_func == NFC_SRIX) || (dev_func == NFC_VICINITY) ) {
 			if (continuous) {
 				cprintf(con, "Scanning %s ",
 					hydranfc_get_mode_string(proto->config.hydranfc.dev_function));
@@ -987,6 +1006,43 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 			return 0;
 		}
 		break;
+
+	case T_DUMP:
+        if (proto->config.hydranfc.dev_function == NFC_SRIX) {
+            hydranfc_srix_dump(con, sd_file.filename);
+        } else {
+            cprintf(con, "[Error] Mode not supported (supported modes: srix)\r\n");
+            return 0;
+        }
+        break;
+
+    case T_CLONE:
+        if (proto->config.hydranfc.dev_function == NFC_SRIX) {
+            hydranfc_srix_clone(con, sd_file.filename);
+        } else {
+            cprintf(con, "[Error] Mode not supported (supported modes: srix)\r\n");
+            return 0;
+        }
+        break;
+
+    case T_READ_ALL:
+        if (proto->config.hydranfc.dev_function == NFC_SRIX) {
+            hydranfc_srix_dump(con, NULL);
+        } else {
+            cprintf(con, "[Error] Mode not supported (supported modes: srix)\r\n");
+            return 0;
+        }
+        break;
+
+    case T_FILL_ALL:
+        memcpy(&arg_uint, p->buf + p->tokens[t+2], sizeof(uint32_t));
+        if (proto->config.hydranfc.dev_function == NFC_SRIX) {
+            hydranfc_srix_fill_all(con, arg_uint);
+        } else {
+            cprintf(con, "[Error] Mode not supported (supported modes: srix)\r\n");
+            return 0;
+        }
+        break;
 
 	case T_READ_MF_ULTRALIGHT:
 		hydranfc_read_mifare_ul(con, sd_file.filename);
@@ -1074,7 +1130,7 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 		cprintf(con, "Exit Direct Mode 0\r\n");
 		break;
 
-	case T_DIRECT_MODE_1:
+	case T_DIRECT_MODE_1: {
 		cprintf(con, "Enter Direct Mode 1 ISO14443A/B 106kbps\r\n");
 		cprintf(con, "TRF7970A IO5/HydraBus PC4 = RX CLK\r\n");
 		cprintf(con, "TRF7970A IO6/HydraBus PC2 = RX Data\r\n");
@@ -1089,7 +1145,14 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 		Trf797x_DM0_DM1_Config();
 		Trf797x_DM1_Enter();
 
+		/*unsigned int rxBuff[32];
+		uint8_t rxBytes, rxBits;*/
+
 		while (!hydrabus_ubtn()) {
+			/*Mifare_DM1_Receive(rxBuff, &rxBytes, &rxBits, 0);
+		    if (rxBytes != 0 || rxBits != 0) {
+		        cprintf(con, "bytes = %u, bits = %u\r\n", rxBytes, rxBits);
+		    }*/
 			chThdSleepMilliseconds(100);
 		}
 		Trf797x_DM1_Exit();
@@ -1099,6 +1162,7 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 		cprintf(con, "Exit Direct Mode 1\r\n");
 
 		break;
+	}
 
 	default:
 		break;
@@ -1142,6 +1206,9 @@ static int show(t_hydra_console *con, t_tokenline_parsed *p)
 		case NFC_TYPEB:
 		    cprintf(con, "Protocol: TypeB (ISO14443B)\r\n");
 		    break;
+		case NFC_SRIX:
+            cprintf(con, "Protocol: SRIX4k (ISO14443B)\r\n");
+            break;
 		case NFC_VICINITY:
 			cprintf(con, "Protocol: Vicinity (ISO/IEC 15693)\r\n");
 			break;

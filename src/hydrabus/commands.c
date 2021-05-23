@@ -90,6 +90,7 @@ const t_token_dict tl_dict[] = {
 	{ T_NFC, "nfc" },
 	{ T_TYPEA, "typea" },
 	{ T_TYPEB, "typeb" },
+	{ T_SRIX, "srix" },
 	{ T_VICINITY, "vicinity" },
 	{ T_EMUL_MIFARE, "emul-mifare" },
 	{ T_EMUL_ISO14443A, "emul-3a" },
@@ -104,6 +105,10 @@ const t_token_dict tl_dict[] = {
 	{ T_DIRECT_MODE_0, "dm0" },
 	{ T_DIRECT_MODE_1, "dm1" },
 	{ T_SENDB, "sendb" },
+	{ T_DUMP, "dump" },
+    { T_CLONE, "clone" },
+    { T_READ_ALL, "read-all" },
+    { T_FILL_ALL, "fill-all" },
 #endif
 	{ T_SNIFF, "sniff" },
 	{ T_GPIO, "gpio" },
@@ -382,6 +387,10 @@ t_token tokens_mode_nfc_sniff[] = {
 		.help = "TypeB (ISO14443B)"\
 	},\
 	{\
+	    T_SRIX,\
+        .help = "SRIX4k (ISO14443B)"\
+    },\
+	{\
 		T_VICINITY,\
 		.help = "Vicinity (ISO/IEC 15693)"\
 	},\
@@ -430,7 +439,26 @@ t_token tokens_mode_nfc_sniff[] = {
 		T_SENDB,\
 		.arg_type = T_ARG_STRING, \
 		.help = "Send ISO14443B command (<string>)"\
-	},
+	},\
+	{\
+        T_DUMP,\
+        .arg_type = T_ARG_STRING,\
+        .help = "Dump"\
+    },\
+    {\
+        T_CLONE,\
+        .arg_type = T_ARG_STRING,\
+        .help = "Clone"\
+    },\
+    {\
+        T_READ_ALL,\
+        .help = "Read all"\
+    },\
+    {\
+        T_FILL_ALL,\
+        .arg_type = T_ARG_UINT,\
+        .help = "Fill all"\
+    },
 
 t_token tokens_sd[];
 t_token tokens_mode_nfc[] = {

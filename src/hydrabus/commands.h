@@ -82,6 +82,7 @@ enum {
 	T_NFC,
 	T_TYPEA,
 	T_TYPEB,
+	T_SRIX,
 	T_VICINITY,
 	T_EMUL_MIFARE,
 	T_EMUL_ISO14443A,
@@ -96,6 +97,10 @@ enum {
 	T_DIRECT_MODE_0,
 	T_DIRECT_MODE_1,
 	T_SENDB,
+	T_DUMP,
+    T_CLONE,
+    T_READ_ALL,
+    T_FILL_ALL,
 #endif
 	T_SNIFF,
 	T_GPIO,

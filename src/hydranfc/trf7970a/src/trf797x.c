@@ -507,6 +507,12 @@ void Trf797xWriteSingle(u08_t *pbuf, u08_t length)
 	SpiWriteSingle(pbuf, length);
 }
 
+void Trf797xWriteSingle2(u08_t reg, u08_t val)
+{
+    u08_t buf[2] = { reg, val };
+    SpiWriteSingle(buf, 2);
+}
+
 /*
 * Send Nb bits (Max 7bits) and receive the data
 * timeout_ms is the max timeout to wait in ms (it is the timeout for whole transfer TX+RX).
@@ -885,6 +891,117 @@ void Trf797x_DM1_Exit(void)
 
 	buf[0] = IRQ_STATUS;
 	Trf797xReadSingle(buf, 1);	// Step 23
+
+	buf[0] = ISO_CONTROL;
+	buf[1] = 0x88;
+	Trf797xWriteSingle(buf, 2);
+}
+
+/*
+* Trf797x_SDM_Enter - Enter Special Direct Mode (SDM) for transmitting
+*/
+void Trf797x_SDM_Enter(void)
+{
+	int i;
+	u08_t buf[2];
+	u08_t iso_control;
+	u08_t length;
+	u08_t *pbuf;
+
+#if 0
+/*
+	buf[0] = ISO_CONTROL;
+	buf[1] = 0x48; // 0x48 => BIT3=Active Mode, BIT6=Direct Mode 1
+	Trf797xWriteSingle(buf, 2);				// Step 16
+*/
+	buf[0] = ISO_CONTROL;
+	Trf797xReadSingle(buf, 1);
+	iso_control = buf[0];
+	/* Set BIT6 for Direct Mode 1 */
+	buf[0] = ISO_CONTROL;
+	buf[1] = iso_control | BIT6; /* BIT6=Direct Mode 1 */
+	Trf797xWriteSingle(buf, 2);				// Step 16
+
+	// Step 17
+	buf[0] = CHIP_STATE_CONTROL;
+	buf[1] = BIT0 | BIT2 | BIT5 | BIT6; /* BIT0=5V, BIT2=AGC ON, BIT5=RF_ON, BIT6=Direct Mode */
+#endif
+
+    // step 2
+    buf[0] = IRQ_MASK;
+    buf[1] = 0x3E;
+    Trf797xWriteSingle(buf, 2);
+    
+    // step 3
+    // receive with no CRC
+    buf[0] = ISO_CONTROL;
+    buf[1] = 0x88;
+    Trf797xWriteSingle(buf, 2);
+    
+    // step 4
+    buf[0] = CHIP_STATE_CONTROL;
+    buf[1] = 0x21;
+    Trf797xWriteSingle(buf, 2);
+    
+    // step 5
+    // disable decoders
+    Trf797xStopDecoders();
+    
+    // step 6
+    // clear IRQ
+    Trf797xReadIrqStatus(buf);
+    
+    //IRQ_OFF
+    
+    // step 7
+    buf[0] = SPECIAL_FUNCTION;
+    buf[1] = 0x08;
+    Trf797xWriteSingle(buf, 2);
+    
+    // step 8
+    buf[0] = CHIP_STATE_CONTROL;
+    buf[1] = 0x61;
+	
+	/* Do like a Trf797xWriteSingle() without a SPI Unselect at end */
+	SPI_LL_Select();
+	pbuf = buf;
+	length = 2;
+	while(length > 0) {
+		// Address/Command Word Bit Distribution
+		// address, write, single (fist 3 bits = 0)
+		*pbuf = (0x1f &*pbuf); // register address
+		for(i = 0; i < 2; i++) {
+			SPI_LL_Write(pbuf, 1);
+
+			pbuf++;
+			length--;
+		}
+	}
+	
+	/* 8 dummy clocks */
+	buf[0] = 0;
+	SPI_LL_Write(&buf[0], 1);
+
+	/* Do not Unselect Chipselect until end of SDM */
+}
+
+/*
+* Trf797x_SDM_Exit - Exit Special Direct Mode (SDM)
+*/
+void Trf797x_SDM_Exit(void)
+{
+	u08_t buf[2];
+
+    // step 13
+	SPI_LL_Unselect();
+
+    // step 14 / 15
+	buf[0] = SPECIAL_FUNCTION;
+	buf[1] = 0x00;
+	Trf797xWriteSingle(buf, 2);
+
+	buf[0] = IRQ_STATUS;
+	Trf797xReadSingle(buf, 1);
 
 	buf[0] = ISO_CONTROL;
 	buf[1] = 0x88;

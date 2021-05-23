@@ -93,6 +93,7 @@ void Trf797xTurnRfOn(void);
 void Trf797xWriteCont(u08_t *pbuf, u08_t length);
 void Trf797xWriteIsoControl(u08_t iso_control);
 void Trf797xWriteSingle(u08_t *pbuf, u08_t length);
+void Trf797xWriteSingle2(u08_t reg, u08_t val);
 
 uint8_t Trf797x_transceive_bits(uint8_t tx_databuf, uint8_t tx_databuf_nb_bits,
 				uint8_t* rx_databuf, uint8_t rx_databuf_nb_bytes,
@@ -111,6 +112,9 @@ void Trf797x_DM0_Exit(void);
 
 void Trf797x_DM1_Enter(void);
 void Trf797x_DM1_Exit(void);
+
+void Trf797x_SDM_Enter(void);
+void Trf797x_SDM_Exit(void);
 
 //===============================================================
 
