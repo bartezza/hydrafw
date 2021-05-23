@@ -36,7 +36,7 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos);
 static int show(t_hydra_console *con, t_tokenline_parsed *p);
 
 static thread_t *key_sniff_thread = NULL;
-static volatile int irq_count;
+volatile int irq_count;
 volatile int irq;
 volatile int irq_end_rx;
 
@@ -827,7 +827,7 @@ static void scan(t_hydra_console *con)
 
 	if (proto->config.hydranfc.dev_function == NFC_TYPEA)
 		hydranfc_scan_mifare(con);
-	else if (proto->dev_function == NFC_TYPEB)
+	else if (proto->config.hydranfc.dev_function == NFC_TYPEB)
 	    hydranfc_scan_typeb(con);
 	else if (proto->config.hydranfc.dev_function == NFC_VICINITY)
 		hydranfc_scan_vicinity(con);
@@ -879,8 +879,17 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 			break;
 
 		case T_TYPEB:
-	        proto->dev_function = NFC_TYPEB;
+	        proto->config.hydranfc.dev_function = NFC_TYPEB;
 	        break;
+
+	    case T_SENDB: {
+	        const char *str = (const char *)(p->buf + p->tokens[t+3]);
+	        cprintf(con, "Str = '%s'\n", str);
+	        
+	        // TODO
+	        
+	        break;
+	    }
 
 		case T_VICINITY:
 			proto->config.hydranfc.dev_function = NFC_VICINITY;

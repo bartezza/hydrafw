@@ -103,6 +103,7 @@ const t_token_dict tl_dict[] = {
 	{ T_BIN, "bin" },
 	{ T_DIRECT_MODE_0, "dm0" },
 	{ T_DIRECT_MODE_1, "dm1" },
+	{ T_SENDB, "sendb" },
 #endif
 	{ T_SNIFF, "sniff" },
 	{ T_GPIO, "gpio" },
@@ -424,6 +425,11 @@ t_token tokens_mode_nfc_sniff[] = {
 	{\
 		T_DIRECT_MODE_1,\
 		.help = "Enter Direct Mode 1 (IO5/PC4=CLK, IO6/PC2=Data)"\
+	},\
+	{\
+		T_SENDB,\
+		.arg_type = T_ARG_STRING, \
+		.help = "Send ISO14443B command (<string>)"\
 	},
 
 t_token tokens_sd[];

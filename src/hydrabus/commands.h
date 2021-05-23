@@ -95,6 +95,7 @@ enum {
 	T_BIN,
 	T_DIRECT_MODE_0,
 	T_DIRECT_MODE_1,
+	T_SENDB,
 #endif
 	T_SNIFF,
 	T_GPIO,
