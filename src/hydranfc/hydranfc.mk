@@ -7,7 +7,8 @@ HYDRANFCSRC = hydranfc/hydranfc.c \
               hydranfc/hydranfc_emul_mifare.c \
               hydranfc/file_fmt_pcap.c \
               hydranfc/hydranfc_emul_mf_ultralight.c \
-              hydranfc/hydranfc_bbio_reader.c
+              hydranfc/hydranfc_bbio_reader.c \
+              hydranfc_typeb.c
 
 # Required include directories
 HYDRANFCINC = ./hydranfc

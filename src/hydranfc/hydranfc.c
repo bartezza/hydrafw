@@ -30,6 +30,7 @@
 #include "microsd.h"
 #include "hydrabus_sd.h"
 #include <string.h>
+#include "hydranfc_typeb.h"
 
 static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos);
 static int show(t_hydra_console *con, t_tokenline_parsed *p);
@@ -82,6 +83,7 @@ static struct {
 
 enum {
 	NFC_TYPEA,
+	NFC_TYPEB,
 	NFC_VICINITY,
 	NFC_EMUL_UID_14443A
 } nfc_function_t;
@@ -810,12 +812,23 @@ void hydranfc_scan_vicinity(t_hydra_console *con)
 	*/
 }
 
+const char *hydranfc_get_mode_string(int mode)
+{
+    switch (mode) {
+        case NFC_TYPEA: return "MIFARE";
+        case NFC_TYPEB: return "TypeB";
+        default: return "Vicinity";
+    }
+}
+
 static void scan(t_hydra_console *con)
 {
 	mode_config_proto_t* proto = &con->mode->proto;
 
 	if (proto->config.hydranfc.dev_function == NFC_TYPEA)
 		hydranfc_scan_mifare(con);
+	else if (proto->dev_function == NFC_TYPEB)
+	    hydranfc_scan_typeb(con);
 	else if (proto->config.hydranfc.dev_function == NFC_VICINITY)
 		hydranfc_scan_vicinity(con);
 }
@@ -864,6 +877,10 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 		case T_TYPEA:
 			proto->config.hydranfc.dev_function = NFC_TYPEA;
 			break;
+
+		case T_TYPEB:
+	        proto->dev_function = NFC_TYPEB;
+	        break;
 
 		case T_VICINITY:
 			proto->config.hydranfc.dev_function = NFC_VICINITY;
@@ -944,10 +961,10 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 	switch(action) {
 	case T_SCAN:
 		dev_func = proto->config.hydranfc.dev_function;
-		if( (dev_func == NFC_TYPEA) || (dev_func == NFC_VICINITY) ) {
+		if( (dev_func == NFC_TYPEA) || (dev_func == NFC_TYPEB) || (dev_func == NFC_VICINITY) ) {
 			if (continuous) {
 				cprintf(con, "Scanning %s ",
-					proto->config.hydranfc.dev_function == NFC_TYPEA ? "MIFARE" : "Vicinity");
+					hydranfc_get_mode_string(proto->config.hydranfc.dev_function));
 				cprintf(con, "with %dms period. Press user button to stop.\r\n", period);
 				while (!hydrabus_ubtn()) {
 					scan(con);
@@ -957,7 +974,7 @@ static int exec(t_hydra_console *con, t_tokenline_parsed *p, int token_pos)
 				scan(con);
 			}
 		} else {
-			cprintf(con, "Please select MIFARE or Vicinity mode first.\r\n");
+			cprintf(con, "Please select a mode first.\r\n");
 			return 0;
 		}
 		break;
@@ -1113,6 +1130,9 @@ static int show(t_hydra_console *con, t_tokenline_parsed *p)
 		case NFC_TYPEA:
 			cprintf(con, "Protocol: TypeA (ISO14443A => MIFARE...)\r\n");
 			break;
+		case NFC_TYPEB:
+		    cprintf(con, "Protocol: TypeB (ISO14443B)\r\n");
+		    break;
 		case NFC_VICINITY:
 			cprintf(con, "Protocol: Vicinity (ISO/IEC 15693)\r\n");
 			break;

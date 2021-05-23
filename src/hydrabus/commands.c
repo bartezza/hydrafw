@@ -89,6 +89,7 @@ const t_token_dict tl_dict[] = {
 #ifdef HYDRANFC
 	{ T_NFC, "nfc" },
 	{ T_TYPEA, "typea" },
+	{ T_TYPEB, "typeb" },
 	{ T_VICINITY, "vicinity" },
 	{ T_EMUL_MIFARE, "emul-mifare" },
 	{ T_EMUL_ISO14443A, "emul-3a" },
@@ -374,6 +375,10 @@ t_token tokens_mode_nfc_sniff[] = {
 	{\
 		T_TYPEA,\
 		.help = "TypeA (ISO14443A => MIFARE...)"\
+	},\
+	{\
+		T_TYPEB,\
+		.help = "TypeB (ISO14443B)"\
 	},\
 	{\
 		T_VICINITY,\
