@@ -1,3 +1,8 @@
+Experimental fork
+========
+Fork of HydraFW firmware for HydraBus/HydraNFC, with added experimental code regarding NFC TypeB, SRIX, and DirectMode.
+
+
 HydraFW official firmware for HydraBus v1
 ========
 
