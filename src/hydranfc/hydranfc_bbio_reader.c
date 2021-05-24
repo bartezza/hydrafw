@@ -22,6 +22,7 @@
 #include "trf797x.h"
 #include "hydrabus_bbio.h"
 #include "hydranfc_bbio_reader.h"
+#include "trf_regs.h"
 
 #include <string.h>
 
@@ -81,6 +82,59 @@ void set_mode_iso_15693(void)
 	Trf797xWriteSingle(data_buf, 2);
 }
 
+void set_mode_iso_14443B(void)
+{
+	uint8_t data_buf[2];
+
+	/* Test ISO14443-A/Mifare read UID */
+	Trf797xInitialSettings();
+	Trf797xResetFIFO();
+
+	/*
+	 * Write Modulator and SYS_CLK Control Register (0x09) (13.56Mhz SYS_CLK
+	 * and default Clock 13.56Mhz + ASK 10))
+	 */
+	data_buf[0] = MODULATOR_CONTROL;
+	data_buf[1] = 0x30;
+	Trf797xWriteSingle(data_buf, 2);
+
+	/*
+	 * ISO Control: ISO14443B RX bit rate, 106 kbps, no RX CRC
+	 */
+	data_buf[0] = ISO_CONTROL;
+	data_buf[1] = IC_ISO14443B_106_KBPS | IC_RX_CRC;
+	Trf797xWriteSingle(data_buf, 2);
+
+	data_buf[0] = ISO_CONTROL;
+	Trf797xReadSingle(data_buf, 1);
+}
+
+void set_mode_manual(uint8_t modulator_control, uint8_t iso_control)
+{
+	uint8_t data_buf[2];
+
+	/* Test ISO14443-A/Mifare read UID */
+	Trf797xInitialSettings();
+	Trf797xResetFIFO();
+
+	/*
+	 * Write Modulator and SYS_CLK Control Register (0x09)
+	 */
+	data_buf[0] = MODULATOR_CONTROL;
+	data_buf[1] = modulator_control;
+	Trf797xWriteSingle(data_buf, 2);
+
+	/*
+	 * ISO Control
+	 */
+	data_buf[0] = ISO_CONTROL;
+	data_buf[1] = iso_control;
+	Trf797xWriteSingle(data_buf, 2);
+
+	data_buf[0] = ISO_CONTROL;
+	Trf797xReadSingle(data_buf, 1);
+}
+
 
 void bbio_mode_hydranfc_reader(t_hydra_console *con)
 {
@@ -102,6 +156,15 @@ void bbio_mode_hydranfc_reader(t_hydra_console *con)
 			}
 			case BBIO_NFC_SET_MODE_ISO_15693: {
 				set_mode_iso_15693();
+				break;
+			}
+			case BBIO_NFC_SET_MODE_ISO_14443B: {
+				set_mode_iso_14443B();
+				break;
+			}
+			case BBIO_NFC_SET_MODE_MANUAL: {
+				chnRead(con->sdu, rx_data, 2);
+				set_mode_manual(rx_data[0], rx_data[1]);
 				break;
 			}
 			case BBIO_NFC_RF_OFF: {

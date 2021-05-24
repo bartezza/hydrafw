@@ -55,14 +55,17 @@ void hydranfc_scan_typeb(t_hydra_console *con)
 	 * and default Clock 13.56Mhz + ASK 10)
 	 */
 	data_buf[0] = MODULATOR_CONTROL;
-	data_buf[1] = 0x30;
+	data_buf[1] = 0x30; // 110000 // MC_SYS_CLK_13_56_MHZ (b4+b5) | MC_ASK_10 (0)
+	// data_buf[1] = 0x31;  // <== in ISO14443A, ISO15693 // MC_SYS_CLK_13_56_MHZ (b4+b5) | MC_ASK_OOK (b0)
 	Trf797xWriteSingle(data_buf, 2);
 
 	/*
 	 * ISO Control: ISO14443B RX bit rate, 106 kbps, no RX CRC
 	 */
 	data_buf[0] = ISO_CONTROL;
-	data_buf[1] = IC_RFID_MODE | IC_ISO14443B_106_KBPS | IC_RX_CRC;
+	// data_buf[1] = 0x02;  // <== in ISO15693, IC_ISO15693_HIGHRATE_1SUB_1OUTOF4 (b1)
+	// data_buf[1] = 0x88;  // <== in ISO14443A, 10001000, IC_ISO14443A_106_KBPS (b3) | IC_RX_CRC (b7)
+	data_buf[1] = IC_ISO14443B_106_KBPS | IC_RX_CRC;
 	Trf797xWriteSingle(data_buf, 2);
 
 	/*

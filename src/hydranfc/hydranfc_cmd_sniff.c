@@ -54,7 +54,7 @@
 #define TST_ON
 
 // Statistics/debug info on time spent to write data on UART
-//#define STAT_UART_WRITE
+#define STAT_UART_WRITE
 
 #define PROTOCOL_OPTIONS_VERSION (0) /* Versions reserved on 3bits BIT0 to BIT2 */
 #define PROTOCOL_OPTIONS_START_OF_FRAME_TIMESTAMP (BIT3) /* Include 32bits start of frame timestamp(1/168MHz increment) at start of each frame */
@@ -681,7 +681,10 @@ void hydranfc_sniff_14443A(t_hydra_console *con, bool start_of_frame, bool end_o
 	if (sniff_pcap_output)
 		tprintf("(pcap mode is on)\r\n");
 	tprintf("Abort/Exit by pressing K4 button\r\n");
-	init_sniff_nfc(ISO14443A);
+
+	tprintf("=> modified to work for typeB\r\n");
+	// init_sniff_nfc(ISO14443A); // typeA
+	init_sniff_nfc(ISO14443B);
 
 	if(sniff_trace_uart1)
 		initUART1_sniff();
@@ -754,6 +757,7 @@ void hydranfc_sniff_14443A(t_hydra_console *con, bool start_of_frame, bool end_o
 			lsh_bit = CountLeadingZero(lsh_bit);
 			rsh_bit = 32-lsh_bit;
 
+			// typeA
 			rsh_miller_bit = 0;
 			lsh_miller_bit = 32-rsh_miller_bit;
 
@@ -776,6 +780,10 @@ void hydranfc_sniff_14443A(t_hydra_console *con, bool start_of_frame, bool end_o
 				   ((downsample_4x[((f_data&0x0000FF00)>>8)])<<2) |
 				   (downsample_4x[(f_data&0x000000FF)]);
 
+			/* Write 8bits raw data */
+			// sniff_write_bin_8b(ds_data); // typeB
+
+			// typeA
 			/* Todo: Find frequency by counting number of consecutive "1" & "0" or the reverse.
 			 * Example0: 1x"1" then 1x"0" => 3.39MHz/2 = Freq 1695KHz
 			 * Example1: 2x"1" then 2x"0" => 3.39MHz/4 = Freq 847.5KHz
@@ -878,6 +886,10 @@ void hydranfc_sniff_14443A(t_hydra_console *con, bool start_of_frame, bool end_o
 					   ((downsample_4x[((f_data&0x0000FF00)>>8)])<<2) |
 					   (downsample_4x[(f_data&0x000000FF)]);
 
+				/* Write 8bits raw data */
+				// sniff_write_bin_8b(ds_data); // typeB
+
+				// typeA
 				switch(protocol_found) {
 				case MILLER_MODIFIED_106KHZ:
 					if (tmp_u8_data_nb_bit < 8) {
@@ -1027,6 +1039,7 @@ void hydranfc_sniff_14443A_bin(t_hydra_console *con, bool start_of_frame, bool e
 #endif
 	uint32_t nb_data;
 	uint32_t end_of_frame_cycles;
+	//uint32_t i;
 
 	tprintf("sniff_14443A_bin start\r\n");
 	tprintf("Abort/Exit by pressing K4 button\r\n");
@@ -1287,6 +1300,11 @@ void hydranfc_sniff_14443A_bin(t_hydra_console *con, bool start_of_frame, bool e
 				bin_frame_hdr.data_size = nfc_sniffer_index;
 				memcpy(&nfc_sniffer_buffer[0], (uint8_t*)&bin_frame_hdr, sizeof(bin_frame_hdr));
 				bsp_uart_write_u8(BSP_DEV_UART1, &nfc_sniffer_buffer[0], nfc_sniffer_index);
+
+				/*for (i = 0; i < nfc_sniffer_index; ++i) {
+					cprintf(con, "%02X ", nfc_sniffer_buffer[i]);
+				}*/
+
 #ifdef STAT_UART_WRITE
 				ticks = (bsp_get_cyclecounter() - ticks);
 				uart_nb_loop++;
@@ -1322,6 +1340,8 @@ void hydranfc_sniff_14443AB_bin_raw(t_hydra_console *con, bool start_of_frame, b
 	uint32_t uart_max;
 	uint32_t uart_nb_loop;
 #endif
+	uint32_t i;
+
 	tprintf("sniff_14443AB_bin_raw start\r\n");
 	tprintf("Abort/Exit by pressing K4 button\r\n");
 	init_sniff_nfc(ISO14443B);
@@ -1474,6 +1494,13 @@ void hydranfc_sniff_14443AB_bin_raw(t_hydra_console *con, bool start_of_frame, b
 				bin_frame_hdr.data_size = nfc_sniffer_index;
 				memcpy(&nfc_sniffer_buffer[0], (uint8_t*)&bin_frame_hdr, sizeof(bin_frame_hdr));
 				bsp_uart_write_u8(BSP_DEV_UART1, &nfc_sniffer_buffer[0], nfc_sniffer_index);
+
+
+				/*for (i = 0; i < nfc_sniffer_index; ++i) {
+					tprintf("%02X ", nfc_sniffer_buffer[i]);
+				}
+				tprintf("\r\n");*/
+
 #ifdef STAT_UART_WRITE
 				ticks = (bsp_get_cyclecounter() - ticks);
 				uart_nb_loop++;

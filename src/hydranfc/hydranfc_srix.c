@@ -258,7 +258,7 @@ int hydranfc_srix_initiate_tag(t_hydra_console *con)
 	 * ISO Control: ISO14443B RX bit rate, 106 kbps, no RX CRC
 	 */
 	data_buf[0] = ISO_CONTROL;
-	data_buf[1] = IC_RFID_MODE | IC_ISO14443B_106_KBPS | IC_RX_CRC;
+	data_buf[1] = IC_ISO14443B_106_KBPS | IC_RX_CRC;
 	Trf797xWriteSingle(data_buf, 2);
 
 	/*
